@@ -1,0 +1,25 @@
+resources: 
+    repositories:
+    - repository: azure_pipelines_templates
+      name: crvi/azure_pipelines_templates
+      type: git 
+      trigger:
+        - main/java_api_templates
+
+trigger:
+  - main 
+
+pool:
+  name: Cristian
+  
+
+
+steps: 
+- template: java_api_templates/bpddockerimage.yml@azure_pipelines_templates
+  parameters:
+    docker_image_name: vintilaterraform.azurecr.io/productapi:v5
+    docker_container_name: productapi
+    helm_repo_name: vintilaterraform.azurecr.io/helm/first-helm
+    values_file_name: values-productapi.yaml
+    flags: --version 0.1.0
+    helm_chart_name: productapi-chart
