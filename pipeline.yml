@@ -1,0 +1,16 @@
+resources: 
+    repositories:
+    - repository: azure_pipelines_templates
+      name: crvi/azure_pipelines_templates
+      type: git 
+      trigger:
+        - main/angular_templates
+
+trigger:
+  - main 
+
+jobs: 
+- template: angular_templates/builldangular.yml@azure_pipelines_templates
+  parameters:
+    docker_image_name: vintilaterraform.azurecr.io/frontend:v5
+    docker_container_name: frontend
