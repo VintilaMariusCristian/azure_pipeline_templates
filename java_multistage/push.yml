@@ -1,0 +1,40 @@
+parameters:
+- name: registry_name 
+  default: 'johndoetest'
+
+steps:
+
+- script: | 
+    az acr login --name ${{parameters.registry_name}}
+  displayName: 'log in into the appropriate acr'
+
+# - script: |
+#     docker run -d --name ${{parameters.docker_container_name}} ${{parameters.docker_image_name}}
+#     docker container inspect  ${{parameters.docker_container_name}}
+#     docker stop  ${{parameters.docker_container_name}}
+#     docker push  ${{parameters.docker_image_name}}
+#    # docker rmi ${{parameters.docker_image_name}}
+#   displayName: 'test and push '
+
+# - script: | 
+#     docker images
+#   displayName: 'list all images'
+
+- task: Docker@2
+  displayName: 'Load Image from Tar'
+  inputs:
+    command: load
+    arguments: '--input $(Pipeline.Workspace)/ContainerImage/$(ImageName).image.tar'
+
+- task: Docker@2
+  displayName: 'ReTag Image with ACR Name - BuildId'
+  inputs:
+    containerRegistry: MyProjectACRdev # This comes from the Service Connections
+    repository: '$(ImageName)'
+    command: tag
+    arguments: '$(ImageName):$(Build.BuildId) $(ContainerRegistryNameDev)/$(ImageName):$(Build.BuildId)'
+
+- script: |
+    docker push  $(ImageName):$(Build.BuildId)
+   # docker rmi ${{parameters.docker_image_name}}
+  displayName: 'test and push '

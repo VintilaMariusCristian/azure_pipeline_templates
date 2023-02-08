@@ -1,0 +1,52 @@
+parameters:
+- name: docker_image_name
+  default: 'johndoetest'
+- name: docker_container_name
+  default: 'johndoetest'
+- name: registry_name 
+  default: 'johndoetest'
+
+steps:
+
+
+
+- script: | 
+    dir 
+  displayName: 'list folders'
+
+- task: Maven@3
+  inputs:
+    mavenPomFile: 'pom.xml'
+    publishJUnitResults: false
+    javaHomeOption: 'JDKVersion'
+    mavenVersionOption: 'Default'
+    mavenAuthenticateFeed: false
+    effectivePomSkip: false
+    sonarQubeRunAnalysis: false
+
+- task: DockerInstaller@0
+  displayName: 'Install Docker 17.09.0-ce'
+
+- script: | 
+    dir 
+    cd target 
+    dir
+    cd ..
+    docker build -t ${{parameters.docker_image_name}} .
+  displayName: 'building an image'
+
+- script: | 
+    az acr login --name ${{parameters.registry_name}}
+  displayName: 'log in into the appropriate acr'
+
+- script: |
+    docker run -d --name ${{parameters.docker_container_name}} ${{parameters.docker_image_name}}
+    docker container inspect  ${{parameters.docker_container_name}}
+    docker stop  ${{parameters.docker_container_name}}
+    docker push  ${{parameters.docker_image_name}}
+   # docker rmi ${{parameters.docker_image_name}}
+  displayName: 'test and push '
+
+- script: | 
+    docker images
+  displayName: 'list all images'

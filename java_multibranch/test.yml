@@ -1,0 +1,16 @@
+parameters:
+- name: docker_image_name
+  default: 'johndoetest'
+- name: docker_container_name
+  default: 'johndoetest'
+
+
+steps:
+
+- script: | 
+    
+    docker rmi ${{parameters.docker_image_name}}
+    docker pull  ${{parameters.docker_image_name}}
+    
+    
+  displayName: 'building an image'

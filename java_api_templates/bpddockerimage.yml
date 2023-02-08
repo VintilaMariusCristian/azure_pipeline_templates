@@ -1,0 +1,54 @@
+parameters:
+- name: docker_image_name
+  default: 'johndoetest'
+- name: docker_container_name
+  default: 'johndoetest'
+- name: helm_repo_name
+  default: vintilacristian.azurecr.io/helm/first-helm
+- name: values_file_name
+  default: default
+- name: flags
+  default: "--version 0.1.0"
+- name: helm_chart_name
+  default: default
+
+steps:
+
+- task: Maven@3
+  inputs:
+    mavenPomFile: 'pom.xml'
+    publishJUnitResults: false
+    javaHomeOption: 'JDKVersion'
+    mavenVersionOption: 'Default'
+    mavenAuthenticateFeed: false
+    effectivePomSkip: false
+    sonarQubeRunAnalysis: false
+
+- task: DockerInstaller@0
+  displayName: 'Install Docker 17.09.0-ce'
+
+- script: | 
+    dir 
+    cd target 
+    dir
+    cd ..
+    docker build -t ${{parameters.docker_image_name}} .
+  displayName: 'building an image'
+
+- script: |
+    docker run -d --name ${{parameters.docker_container_name}} ${{parameters.docker_image_name}}
+    docker container inspect  ${{parameters.docker_container_name}}
+    docker stop  ${{parameters.docker_container_name}}
+    docker push  ${{parameters.docker_image_name}}
+   # docker rmi ${{parameters.docker_image_name}}
+  displayName: 'test and push '
+
+- script: | 
+    docker images
+  displayName: 'list all images'
+
+- script: |
+    git clone https://SchrodingerPuppy@dev.azure.com/SchrodingerPuppy/crvi/_git/helm_values
+    cd helm_values 
+    helm install -f ${{parameters.values_file_name}} ${{parameters.helm_chart_name}} oci://${{parameters.helm_repo_name}} ${{parameters.flags}}
+  displayName: 'Deploy to AKS'

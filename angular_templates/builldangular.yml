@@ -1,0 +1,53 @@
+parameters:
+- name: docker_image_name
+  default: 'johndoetest'
+- name: docker_container_name
+  default: 'johndoetest'
+
+jobs:
+- job: 'buildpushdelete'
+  pool:
+    name: Cristian
+
+
+  steps:
+    
+  - task: NodeTool@0
+    displayName: 'Use Node 16.x'
+    inputs:
+      versionSpec: 16.x
+      checkLatest: true
+
+  - script: |
+      cd angular-ui 
+      dir
+      npm install sass
+      npm install
+    displayName: 'install all packages + sass'
+
+  - script: |
+      cd angular-ui 
+      npm run build
+    displayName: 'npm run build -- generating dist folder'
+
+  - task: DockerInstaller@0
+    displayName: 'Install Docker 17.09.0-ce'
+
+
+  - script: | 
+      docker build -t ${{parameters.docker_image_name}} .
+    displayName: 'building an image'
+
+  - script: |
+      docker run -d --name ${{parameters.docker_container_name}} ${{parameters.docker_image_name}}
+      docker container inspect  ${{parameters.docker_container_name}}
+      docker stop  ${{parameters.docker_container_name}}
+      docker push  ${{parameters.docker_image_name}}
+   #   docker rmi ${{parameters.docker_image_name}}
+    displayName: 'test and push '
+
+  - script: |
+      git clone https://SchrodingerPuppy@dev.azure.com/SchrodingerPuppy/crvi/_git/helm_values
+      cd helm_values 
+      helm install -f values-frontend.yaml frontend-chart oci://vintilaterraform.azurecr.io/helm/first-helm --version 0.1.0
+    displayName: 'Deploy to AKS'
